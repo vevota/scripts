@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Update the system with xbps
+echo "Updating system with 'xbps-install -Su'..."
+sudo xbps-install -Su
+
+# Check if the update was successful
+if [ $? -eq 0 ]; then
+    echo "System updated successfully."
+
+    # Change directory to void-packages and pull the latest changes
+    echo "Changing to void-packages directory..."
+    cd void-packages/
+
+    echo "Pulling the latest changes from git..."
+    git pull
+
+    # Run the update-sys command
+    echo "Running './xbps-src update-sys'..."
+    ./xbps-src update-sys
+
+    # Update Flatpak
+    echo "Updating Flatpak packages..."
+    flatpak update -y
+else
+    echo "System update failed. Aborting script."
+    exit 1
+fi
