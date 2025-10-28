@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Twitch YouTube Embed Replacer (Under Controls)
+// @name         Twitch Stream Embed Replacer (YouTube + Kick)
 // @namespace    http://tampermonkey.net/
-// @version      1.2
-// @description  Replace Twitch player with YouTube stream only when you click the button
+// @version      1.3
+// @description  Replace Twitch player with YouTube or Kick stream only when you click the button
 // @match        https://www.twitch.tv/*
 // @grant        none
 // ==/UserScript==
@@ -19,7 +19,7 @@
 
         const btn = document.createElement('button');
         btn.id = 'yt-replace-btn';
-        btn.textContent = 'Replace with YouTube';
+        btn.textContent = 'Replace Stream';
         btn.style.cssText = `
             background-color: #18181b;
             color: #efeff1;
@@ -34,18 +34,31 @@
         btn.onmouseleave = () => btn.style.backgroundColor = '#18181b';
 
         btn.onclick = () => {
-            const ytUrl = prompt('Enter YouTube Live URL:');
-            if (!ytUrl) return;
+            const streamUrl = prompt('Enter YouTube or Kick.com Live URL:');
+            if (!streamUrl) return;
 
-            const match = ytUrl.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-            if (!match) {
-                alert('Invalid YouTube URL');
+            let embedUrl = null;
+
+            // YouTube detection
+            const ytMatch = streamUrl.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+            if (ytMatch) {
+                const videoId = ytMatch[1];
+                embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            }
+
+            // Kick.com detection
+            const kickMatch = streamUrl.match(/kick\.com\/([^/?#]+)/i);
+            if (!embedUrl && kickMatch) {
+                const channel = kickMatch[1];
+                embedUrl = `https://player.kick.com/${channel}`;
+            }
+
+            if (!embedUrl) {
+                alert('Invalid YouTube or Kick URL');
                 return;
             }
-            const videoId = match[1];
-            const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
 
-            // Mute Twitch before replacing
+            // Pause Twitch video before replacing
             document.querySelector('video')?.pause();
 
             const playerContainer = document.querySelector('.video-player__container');
